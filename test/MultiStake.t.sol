@@ -29,21 +29,50 @@ contract MultiStakeFuzzTest is Test {
         emit log_named_bytes("Owners", abi.encode(multiStake.owners));
     }
 
+    function test_Approve() public {
+        vm.startPrank(address(1));
+        multiStake.submit(address(0xB0B), 1 ether, hex"01");
+        multiStake.approve(0);
+        vm.stopPrank();
+        vm.startPrank(address(2));
+        multiStake.approve(0);
+        vm.stopPrank();
+        vm.startPrank(address(3));
+        multiStake.approve(0);
+        vm.stopPrank();
+        vm.startPrank(address(4));
+        multiStake.approve(0);
+        vm.stopPrank();
+        vm.startPrank(address(5));
+        multiStake.approve(0);
+        vm.stopPrank();
+
+        vm.startPrank(address(1));
+        vm.expectRevert("Tx does not exist");
+        multiStake.approve(1);
+        vm.stopPrank();
+
+        vm.startPrank(address(0xB0B));
+        vm.expectRevert("Not owner");
+        multiStake.approve(0);
+        vm.stopPrank();
+    }
+
     function testFuzz_Submit(
-        address _to,
-        uint96 _value,
-        bytes calldata _data
+        address to,
+        uint96 value,
+        bytes calldata data
     ) public {
         vm.prank(address(1));
-        multiStake.submit(_to, _value, _data);
+        multiStake.submit(to, value, data);
         vm.prank(address(2));
-        multiStake.submit(_to, _value, _data);
+        multiStake.submit(to, value, data);
         vm.prank(address(3));
-        multiStake.submit(_to, _value, _data);
+        multiStake.submit(to, value, data);
         vm.prank(address(4));
-        multiStake.submit(_to, _value, _data);
+        multiStake.submit(to, value, data);
         vm.prank(address(5));
-        multiStake.submit(_to, _value, _data);
+        multiStake.submit(to, value, data);
     }
 
     /** HELPER FUNCTIONS */
