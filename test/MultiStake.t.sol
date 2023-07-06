@@ -10,6 +10,8 @@ contract MultiStakeFuzzTest is Test {
     uint256 public totalExecutions;
     address[] owners = new address[](5);
 
+    event Approved(uint256 indexed id, address indexed approver, bool isApproved);
+
     function setUp() public {
         owners[0] = address(1);
         owners[1] = address(2);
@@ -20,6 +22,8 @@ contract MultiStakeFuzzTest is Test {
         multiStake = new MultiStake(owners, 2);
         totalSubmissions = 0;
         totalExecutions = 0;
+
+        vm.deal(address(multiStake), 5 ether);
     }
 
     function test_SetUp() public {
@@ -58,11 +62,7 @@ contract MultiStakeFuzzTest is Test {
         vm.stopPrank();
     }
 
-    function testFuzz_Submit(
-        address to,
-        uint96 value,
-        bytes calldata data
-    ) public {
+    function testFuzz_Submit(address to, uint96 value, bytes calldata data) public {
         vm.prank(address(1));
         multiStake.submit(to, value, data);
         vm.prank(address(2));
@@ -75,7 +75,40 @@ contract MultiStakeFuzzTest is Test {
         multiStake.submit(to, value, data);
     }
 
-    /** HELPER FUNCTIONS */
+    function test_EndToEnd() public {
+        // Prank an owner
+        address prankedOwner = owners[0];
+        vm.prank(prankedOwner);
+
+        // Submit a transaction
+        address to = address(0xFAB);
+        uint96 value = 1 ether;
+        bytes memory data = hex"";
+        multiStake.submit(to, value, data);
+        totalSubmissions++;
+
+        // Approve the transaction
+        for (uint256 i = 0; i < 3; i++) {
+            vm.prank(owners[i]);
+            multiStake.approve(totalSubmissions - 1);
+            emit Approved(totalSubmissions - 1, owners[i], true);
+        }
+
+        // emit log_array(owners);
+
+        // Execute the transaction
+        vm.prank(prankedOwner);
+        multiStake.execute(totalSubmissions - 1);
+        totalExecutions++;
+        // Verify the execution
+        assertEq(totalExecutions, 1);
+        assertEq(totalSubmissions, 1);
+        assertTrue(address(0xFAB).balance == value);
+    }
+
+    /**
+     * HELPER FUNCTIONS
+     */
     function _getOwnersLength() public view returns (uint256) {
         return owners.length;
     }

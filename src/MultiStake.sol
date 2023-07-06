@@ -82,7 +82,10 @@ contract MultiStake {
         emit Submit(transactions.length - 1);
     }
 
-    function approve(uint256 _txId) external onlyOwner txExists(_txId) notApproved(_txId) notExecuted(_txId) {}
+    function approve(uint256 _txId) external onlyOwner txExists(_txId) notApproved(_txId) notExecuted(_txId) {
+        approved[_txId][msg.sender] = true;
+        emit Approve(msg.sender, _txId);
+    }
 
     function execute(uint256 _txId) external txExists(_txId) notExecuted(_txId) {
         require(_getApprovalCount(_txId) >= required, "approvals < required");
@@ -109,6 +112,7 @@ contract MultiStake {
                 count += 1;
             }
         }
+        return count;
     }
 
     function _getTransactionsLength() external view returns (uint256) {
